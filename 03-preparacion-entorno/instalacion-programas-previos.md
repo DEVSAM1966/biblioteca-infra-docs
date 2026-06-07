@@ -23,15 +23,54 @@ sudo apt upgrade -y
 sudo apt install -y git curl wget nano unzip ca-certificates gnupg build-essential
 ```
 
+  Nota:
+      Herramientas incluidas:
+      git: para clonar los proyectos
+      curl: para probar servicios y descargar scripts
+      wget: para probar Nginx y descargar archivos
+      nano: editor de texto
+      unzip: descompresión de archivos
+      ca-certificates y gnupg: necesarios para repositorios externos (NodeSource, Docker)
+      build-essential: Necesario para compilar dependencias nativas de Node.js.
 
-    Herramientas incluidas:
-    git: para clonar los proyectos
-    curl: para probar servicios y descargar scripts
-    wget: para probar Nginx y descargar archivos
-    nano: editor de texto
-    unzip: descompresión de archivos
-    ca-certificates y gnupg: necesarios para repositorios externos (NodeSource, Docker)
-    build-essential: Necesario para compilar dependencias nativas de Node.js.
+### 1.2. Creación de usuarios adicionales (IMPORTANTE)
+Los proveedores de VPS (OVH, Contabo, Hostinger, etc.) normalmente te dan:
+
+- un usuario root
+
+- o un usuario administrador con permisos sudo
+
+Pero no crean usuarios operativos, ni usuarios para despliegue, ni usuarios para servicios.
+
+En entornos profesionales sí es recomendable crear usuarios adicionales, pero no para replicar al proveedor, sino para:
+
+- separar responsabilidades
+
+- mejorar la seguridad
+
+- evitar usar root
+
+- aislar servicios
+
+#### 1.2.1 Usuario administrador
+Usuarios normales con permisos sudo.
+
+Para el administrador en España (**pedirá contraseña**).
+```bash
+sudo adduser sebastian
+sudo usermod -aG sudo sebastian
+```
+
+Para el administrador en Chile (**pedirá contraseña**).
+```bash
+sudo adduser mabel
+sudo usermod -aG sudo mabel
+```
+
+Estos usuarios reemplaza al root para tareas administrativas.
+
+  Nota:
+    Con estos usuarios nos conectaremos con el servidor para realizar el resto de tareas de instalación, evitando el usuario root.
 
 ---
 
@@ -156,10 +195,12 @@ docker --version
 docker compose version
 ```
 
-### 4.8. (Opcional pero recomendado) Añadir el usuario actual al grupo docker
+### 4.8. (Opcional pero recomendado) Añadir el usuario deploy al grupo docker
 ```bash
-sudo usermod -aG docker $USER
+sudo adduser deploy
+sudo usermod -aG docker deploy
 ```
+Este usuario no tiene sudo y ejecuta Docker, manejar PM2, gestionar proyectos.
 
 > Nota: Es necesario cerrar sesión y volver a entrar para que el cambio surta efecto.
 
@@ -178,6 +219,8 @@ El servidor MySQL se ejecutará en un contenedor dedicado con:
 - Puerto interno no expuesto públicamente.
 
 En los repositorios de los proyectos de backend estan los ficheros docker-compose.yml para cada proyecto (se recomienda leer los correspondiente README.md de cada proyecto).
+
+**PARA MÁS INFORMACIÓN VER EL DOCUMENTO: configuracion-mysql.md**
 
 ---
 
