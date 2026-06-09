@@ -218,7 +218,12 @@ El servidor MySQL se ejecutará en un contenedor dedicado con:
 - Acceso restringido únicamente desde los backends.
 - Puerto interno no expuesto públicamente.
 
-En los repositorios de los proyectos de backend estan los ficheros docker-compose.yml para cada proyecto (se recomienda leer los correspondiente README.md de cada proyecto).
+En los repositorios de los proyectos de backend estan los ficheros docker-compose.yml para cada proyecto (se recomienda leer los correspondiente README.md de cada proyecto):
+
+https://github.com/DEVSAM1966/Biblioteca-code-cafe.git
+
+https://github.com/DEVSAM1966/Biblioteca-codigojava.git
+
 
 **PARA MÁS INFORMACIÓN VER EL DOCUMENTO: configuracion-mysql.md**
 
