@@ -453,4 +453,348 @@ Verificar que compila sin errores.
 
 ---
 
-## 4. FALTA MÁS DOCUMENTACIÓN
+## 🟦 4. Crear el Contenedor Docker para la Base de Datos MySQL
+
+Este cápitulo se levanta la base de datos MySQL 8.0 en el VPS utilizando Docker Compose, ejecuta automáticamente los scripts SQL del proyecto y deja la base de datos lista para importar datos reales en pasos posteriores.
+
+### 🟩 4.1. Posicionarse en el directorio del proyecto
+
+El archivo docker-compose.yml está en: ``/opt/biblioteca/app/``
+
+Nos posicionamos en el directorio con:
+
+```bash
+cd /opt/biblioteca/app
+```
+
+### 🟩 4.2. Levantar el contenedor MySQL
+
+Ejecutar (asegurarse de tener el demonio de docker activo en el sistema):
+
+```bash
+docker compose up -d
+```
+
+Esto crea:
+
+- Contenedor: biblio_codigojava_mysql
+
+- Puerto expuesto: 3310 → 3306
+
+- Esquema inicial: biblio_codigojava
+
+- Usuario root con contraseña definida
+
+- Scripts SQL ejecutados automáticamente: sql/create_schema.sql y sql/data.sql
+
+### 🟩 4.3. Verificar que el contenedor está en ejecución
+
+```bash
+docker ps | grep biblio
+```
+
+La salida esperada debe ser algo asi:
+
+```bash
+biblio_codigojava_mysql   mysql:8.0   ...   Up ...
+```
+
+### 🟩 4.4. Acceder al contenedor MySQL
+
+Mediante el siguiente comando de docker (*):
+
+```bash
+docker exec -it biblio_codigojava_mysql mysql -u root -p
+```
+
+(*) Nota:
+    Recordar que accedemos como root y contraseña **Jean-Luc_Picard_1966**
+
+### 🟩 4.5. Seleccionar el esquema
+
+Dentro de MySQL, cambiamos de esquema:
+
+```sql
+USE biblio_codigojava;
+```
+
+### 🟩 6. Verificar que las tablas se han creado correctamente
+
+```sql
+SHOW TABLES;
+```
+Mostrara las tablas: authors, publishers, categories, books, users, loans, histories.
+
+### 🟩 4.7. Verificar que los datos iniciales se han cargado
+
+Ejecutar consultas rápidas con:
+```sql
+SELECT COUNT(*) FROM authors;
+SELECT COUNT(*) FROM books;
+SELECT COUNT(*) FROM users;
+SELECT COUNT(*) FROM publishers;
+SELECT COUNT(*) FROM categories;
+```
+Debe devolver valores > 0 (datos de prueba del sqcript sql data.sql).
+
+Nota:
+    Son un juego de datos iniciales para pruebas en desarrollo.
+    En breve serán sobrescritos con datos reales.
+
+Para salir ejecutar un: 
+
+```sql
+exit
+```
+
+### 🟩 4.8. Verificación final
+
+Verifiquemos el logs de creación del contenedor docker, con:
+
+```bash
+docker logs biblio_codigojava_mysql --tail 20
+```
+
+---
+
+## 🟦 5. Configurar el Directorio uploads/cover y uploads/file en el VPS 
+
+El backend Biblioteca CódigoJava requiere dos directorios externos para almacenar archivos subidos por los usuarios o precargados desde el entorno de desarrollo.
+
+Estos directorios no existen en el repositorio porque están excluidos por ``.gitignore``, por lo que se crearon manualmente en el VPS (ver esta misma documentación más arriba).
+
+### 🟩 5.1. Verificar que los directorios existen
+
+```bash
+tree /opt/biblioteca/uploads
+```
+
+Salida esperada:
+
+```bash
+/opt/biblioteca/uploads
+├── cover
+└── file
+```
+
+### 🟩 5.2. Asignar permisos adecuados
+
+El usuario que ejecutará el backend debe tener permisos de lectura y escritura sobre estos directorios.
+
+```bash
+sudo chown -R $USER:$USER /opt/biblioteca/uploads
+sudo chmod -R 755 /opt/biblioteca/uploads
+```
+
+---
+
+## 🟦 6. Exportar los Datos de la Base de Datos en Local
+
+Este paso genera un archivo SQL con todos los datos actuales de la base de datos local biblio_codigojava, que posteriormente será importado en el VPS.
+
+**Estos pasos serán realizado por el técnico de España y avisara al técnico de Chile cuando suba el fichero con los datos de la BD en local.**
+
+### 🟩 6.1. Realizar el export de la base de datos
+
+Desde el PC local del técnico de España (debe tener Docker activo y el contenedor levantado) se ejecutara este comando en su **maquina local**:
+
+```bash
+docker exec biblio_codigojava_mysql \
+  mysqldump -u root -pJean-Luc_Picard_1966 \
+  biblio_codigojava > export_biblio_codigojava.sql
+```
+
+Esto generará el archivo: **export_biblio_codigojava.sql**
+
+En el directorio donde se ejecuto el comando anterior.y para verificarlo de su existencia se realizará:
+
+```bash
+ls -lh export_biblio_codigojava.sql
+```
+
+El tamaño que debera mostrar será > 0.
+
+Validaremos que el archivo contiene datos reales con:
+
+```bash
+head -n 20 export_biblio_codigojava.sql
+```
+
+Debe verse:
+
+- Creación de tablas
+
+- Inserciones (INSERT INTO ...)
+
+- Estructura completa del esquema
+
+### 🟩 6.2. Comprimir el archivo (opcional pero recomendado)
+
+Para acelerar la transferencia al VPS (no es necesario si es pequeño el fichero generado):
+
+```bash
+gzip export_biblio_codigojava.sql
+```
+
+Esto generará: **export_biblio_codigojava.sql.gz**
+
+---
+
+## 🟦 7. Subir al VPS el Export SQL, PDFs y Portadas mediante SFTP
+
+Este paso transfiere al VPS:
+
+- El archivo SQL exportado en el Paso 6
+
+- Las portadas JPG/JPEG
+
+- Los archivos PDF de los libros
+
+Todo se subirá a los directorios creados anteriormente:
+
+### 🟩 7.1. Conectarse al VPS mediante SFTP
+
+Desde la máquina local del técnico en España:
+
+```bash
+sftp usuario@IP_DEL_VPS
+```
+
+Ejemplo:
+
+```bash
+sftp sam@51.79.84.186
+```
+
+## 🟩 7.2. Subir el archivo SQL exportado
+
+En la sesión SFTP:
+
+```bash
+put export_biblio_codigojava.sql.gz /opt/biblioteca/
+```
+
+Si se comprimo:
+
+```bash
+put export_biblio_codigojava.sql /opt/biblioteca/
+```
+
+### 🟩 7.3. Subir las portadas (JPG/JPEG)
+
+En la sesión SFTP:
+
+```bash
+
+cd /opt/biblioteca/uploads/cover
+put /home/sam/SAM-PROYECTOS/Biblioteca-codigojava/uploads/cover/*.jpg
+put /home/sam/SAM-PROYECTOS/Biblioteca-codigojava/uploads/cover/*.jpeg
+```
+
+### 🟩 7.4. Subir los archivos PDF
+
+En la sesión SFTP:
+
+```bash
+cd /opt/biblioteca/uploads/file
+put /home/sam/SAM-PROYECTOS/Biblioteca-codigojava/uploads/file/*.pdf
+```
+
+### 🟩 7.5. Verificar que los archivos están en el VPS
+
+Salir de SFTP y ejecutar en el VPS:
+
+```bash
+ls -lh /opt/biblioteca/uploads/cover
+ls -lh /opt/biblioteca/uploads/file
+ls -lh /opt/biblioteca/
+```
+
+Se debe ver los PDFs, Portadas y export_biblio_codigojava.sql o .gz.
+
+### 🟩 7.6. Ajustar permisos (si es necesario)
+
+```bash
+sudo chown -R $USER:$USER /opt/biblioteca/uploads
+sudo chmod -R 755 /opt/biblioteca/uploads
+```
+
+---
+
+## 🟦 8. Importar los Datos en la Base de Datos del VPS y Verificar la Integridad
+
+En este capitulo se importa el archivo SQL a la BD del VPS, validamos que las tablas y datos se han cargado correctamente.
+
+### 🟩 8.1. Importar el archivo SQL en el contenedor
+
+Si se subio el archivo del export comprimido deberemos hacer:
+
+```bash
+gunzip /opt/biblioteca/export_biblio_codigojava.sql.gz
+```
+Ahora realizamos el import con:
+
+```bash
+docker exec -i biblio_codigojava_mysql \
+  mysql -u root -pJean-Luc_Picard_1966 \
+  biblio_codigojava < /opt/biblioteca/export_biblio_codigojava.sql
+```
+
+### 🟩 8.2. Verificar que las tablas contienen datos reales
+
+Acceder a la BD con:
+
+```bash
+docker exec -it biblio_codigojava_mysql mysql -u root -p
+```
+
+Nota:   Pedira la contraseña de root.
+
+Ejecutar:
+
+```sql
+USE biblio_codigojava;
+
+SELECT COUNT(*) FROM authors;
+SELECT COUNT(*) FROM books;
+SELECT COUNT(*) FROM users;
+SELECT COUNT(*) FROM loans;
+SELECT COUNT(*) FROM histories;
+```
+
+Deben contener registros, si se prefiere hacer algun SELECT para verificar que los datos coincidan.
+
+Verificamos la integridad básica de relaciones con:
+
+```sql
+SELECT b.id, b.title, a.name 
+FROM books b 
+JOIN authors a ON b.author_id = a.id 
+LIMIT 5;
+```
+
+Si devuelve filas, las relaciones están correctas.
+
+Verificaremos que el usuario ``app_user`` existe en la BD:
+
+```sql
+SELECT user, host FROM mysql.user;
+```
+
+Debe aparecer:  app_user | %
+
+Podremos salir del la BD con: exit
+
+### 🟩 8.3. Verificación final 
+
+Ekecutamos este comando para verificar en los logs de Docker la ausencia de errores:
+
+```bash
+docker logs biblio_codigojava_mysql --tail 20
+```
+Buscaremos errores y avisos de importación en BD.
+
+---
+
+## AQUI LLEGUE, FALTA MAS.
+
