@@ -796,5 +796,369 @@ Buscaremos errores y avisos de importación en BD.
 
 ---
 
-## AQUI LLEGUE, FALTA MAS.
+## Levantar el Contenedor Docker de la Base de Datos (Modo Producción)
+
+Este paso asegura que el contenedor MySQL del VPS está en ejecución, estable y listo para ser utilizado por el backend Biblioteca CódigoJava.
+
+### 🟩 9.1. Levantar el contenedor MySQL en modo producción
+
+Desplazarse hasta el directorio:  **/opt/biblioteca/app/**  Aqui estará el archivo ``docker-compose.yml``.
+
+Ejecutar el siguiente comando Docker:
+
+```docker
+docker compose up -d
+```
+
+Nota:
+    El comando **docker compose up -d** sirve para crear un contenedor que no existe y lo levanta.
+    También si existe el el contendor solo lo lenvanta y en el caso que se hubiese modificado el archivo ``docker-compose.yml`` entonces regenera el contenedor (mantiene los volúmnes y por tanto no hay perdida de datos) y lo levanta.
+
+
+Verificaremos que el contendor está en ejecución:
+
+```docker
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+```
+
+La salida esperada sería: **biblio_codigojava_mysql   Up ...   0.0.0.0:3310->3306/tcp**
+
+### 🟩 9.2. Verificar que MySQL responde correctamente
+
+Como se ha hecho anteriormente ejecutaremos:
+
+```docker
+docker exec -it biblio_codigojava_mysql mysql -u root -p
+```
+
+Nota: 
+    Pedira contraseña
+
+
+Dentro de MySQL lanzamos:
+
+```sql
+USE biblio_codigojava;
+SHOW TABLES;
+SELECT COUNT(*) FROM books;
+```
+
+Si devuelve datos, la BD está lista.
+
+### 🟩 9.3. Verificar logs del contenedor
+
+Realizamos la verificación habitual:
+
+```docker
+docker logs biblio_codigojava_mysql --tail 30
+```
+
+Debemos mostrar que MySQL listo para conexiones, ausencia de errores de permisos y sin avisos po warnings.
+
+---
+
+## 🟦 10. Compilar el Backend en el VPS (Maven + Java 17)
+
+Este paso compila el proyecto Biblioteca CódigoJava directamente en el VPS usando Maven y Java 17, generando el archivo ejecutable ``.jar`` dentro del directorio ``target/``.
+
+### 🟩 10.1. Compilar el backend sin ejecutar tests
+
+Nos posicionamos en el directorio:  **/opt/biblioteca/app** y compilamos con:
+
+```bash
+mvn -q -DskipTests clean package
+```
+
+Esto realiza una limpieza del proyecto, compila. ejecuta los procesadores de anotaciones y empaqueta todo en un ``.jar``.
+
+
+### 🟩 10.2. Verificar que el .jar se ha generado correctamente
+
+```bash
+ls -lh target/*.jar
+```
+
+La salida esperada sería: **target/biblioteca-0.0.1-SNAPSHOT.jar**
+
+Si aparece, la compilación ha sido exitosa.
+
+### 🟩 10.3. Validar que el .jar es ejecutable
+
+Ejecutar una prueba rápida (sin dejarlo corriendo):
+
+```bash
+java -jar target/biblioteca-0.0.1-SNAPSHOT.jar --spring.main.web-application-type=none
+```
+
+Debe mostrar:
+
+- Banner ASCII
+
+- Logs de Spring Boot
+
+- Inicialización correcta
+
+Detener con ``CTRL + C``.
+
+### 🟩 10.4. Verificación final
+
+El backend está correctamente compilado si:
+
+- Existe el archivo ``.jar``.
+
+- No hay errores de Maven.
+
+- MapStruct generó los mappers.
+
+- Lombok generó getters/setters.
+
+- Spring Boot empaquetó el proyecto.
+
+---
+
+## 🟦 11. Crear un Servicio systemd para Ejecutar el Backend en Producción
+
+Este paso configura el backend Biblioteca CódigoJava como un servicio del sistema Linux usando systemd, permitiendo:
+
+- Ejecución en segundo plano.
+
+- Reinicio automático.
+
+- Logs gestionados por journald.
+
+- Arranque automático al reiniciar el VPS.
+
+- Aislamiento del usuario del sistema.
+
+### 🟩 11.1. Crear un usuario dedicado para el servicio (opcional pero recomendado)
+
+Esto evita ejecutar el backend como root.
+
+```bash
+sudo useradd -r -s /bin/false biblioteca
+```
+
+Damos permisos al usuario ``biblioteca``sobre ``/opt/biblioteca``:
+
+```bash
+sudo chown -R biblioteca:biblioteca /opt/biblioteca
+```
+
+### 🟩 11.2. Crear el archivo del servicio systemd
+
+Crear con nano, vi (lo que se prefiera) el siguiente archivo:
+
+```bash
+sudo nano /etc/systemd/system/biblioteca.service
+```
+
+El contenido del archivo será:
+
+```bash
+[Unit]
+Description=Backend Biblioteca CodigoJava
+After=network.target docker.service
+
+[Service]
+User=biblioteca
+WorkingDirectory=/opt/biblioteca/app
+ExecStart=/usr/bin/java -jar /opt/biblioteca/app/target/biblioteca-0.0.1-SNAPSHOT.jar
+SuccessExitStatus=143
+Restart=always
+RestartSec=10
+Environment=SPRING_CONFIG_LOCATION=/opt/biblioteca/secrets/application-secret.properties
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Una explicación rápida de lo que hace esto:
+
+- **User=biblioteca** → ejecuta el backend con usuario seguro.
+- **ExecStart** → ejecuta el .jar compilado.
+- **Restart=always** → reinicia si falla.
+- **Environment** → permite cargar el fichero de propiedades secreto externo.
+
+### 🟩 11.3. Recargar systemd para reconocer el nuevo servicio
+
+```bash
+sudo systemctl daemon-reload
+```
+
+### 🟩 11.4. Iniciar el servicio
+
+```bash
+sudo systemctl start biblioteca
+```
+
+### 🟩 11.5. Verificar que el servicio está corriendo
+
+```bash
+sudo systemctl status biblioteca
+```
+
+La salida esperada: **Active: active (running)**
+
+**Si aparece, el backend está funcionando como servicio.**
+
+### 🟩 6. Habilitar arranque automático al iniciar el VPS
+
+```bash
+sudo systemctl enable biblioteca
+```
+
+ATENCIÓN:
+    Para que no de problemas este arranque automático del backend codigojava, deberemos asegurarnos que el contenedor de la BD esta levantado antes.  
+
+    **Dejo al lector como ejercicio que procedimiento debe seguir para automátizar el arranque del contenedor antes que el backend.**
+
+### 🟩 11.7. Ver logs del servicio
+
+```bash
+sudo journalctl -u biblioteca -f
+```
+
+Esto nos mostrara logs de Spring Boot, errores, peticiones entrantes, arranques y reinicios.
+
+### 🟩 11.8. Reiniciar el servicio cuando actualices el backend
+
+Cuando se recompile el ``.jar`` porque se realizo una modificación o se añadio una nueva funcionalidad a futuro, se realizara:
+
+```bash
+sudo systemctl restart biblioteca
+```
+
+Para parar el backend por nosotros mismos podemos ejecutar:
+
+```bash
+sudo systemctl stop biblioteca
+```
+
+---
+
+## 🟦 12. Verificación Final del Backend en Producción
+
+Confirmaremos que el backend Biblioteca CódigoJava está funcionando correctamente en el VPS, que responde a peticiones HTTP, que se conecta a la base de datos y que la documentación Redoc está disponible.
+
+## 🟩 12.1. Verificar que el servicio está en ejecución
+
+Visto antes, no entro en detalles:
+
+```bash
+sudo systemctl status biblioteca
+```
+
+Mostrará:  **Active: active (running)**, sino es asi lanzar:
+
+```bash
+sudo systemctl restart biblioteca
+```
+
+## 🟩 12.2. Ver logs del backend en tiempo real
+
+Revisemos los logs (ya se vio antes):
+
+```bash
+sudo journalctl -u biblioteca -f
+```
+
+## 🟩 12.3. Probar el endpoint raíz
+
+Desde el VPS:
+
+```bash
+curl http://localhost:9800/
+```
+
+Devolverá: **¡Hola mundo cruel y vil ... !** 
+
+Nota:
+    Tengo la construmbre de preparar un mensaje visible en honor a cierta frase famosa del gremio y con un toque jocoso en la aplicación de backend (antes de completar el desarrollo) para verificar que hay funcionalidad tras la construcción de los ficheros ``pom.xml`` y ``application.properties``.
+
+
+### 🟩 12.4. Probar un endpoint público
+
+Desde el VPS:
+
+```bash
+http://localhost:9800/books/public
+```
+
+Devolverá un JSON con los libros.
+
+### 🟩 12.5. Probar autenticación
+
+Desde el VPS:
+
+```bash
+curl -X POST http://localhost:9800/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"sasuncion9003@gmail.com","password":"Jean-Luc-Picard-1966"}'
+```
+
+Devolverá un token JWT, en este caso devolvio en crudo:
+
+```bash
+{"data":{"user":{"fullname":"Sebastián Asunción Montero","registrationDate":"2026-03-31T00:00:00","role":"ADMIN","userId":12,"userDrop":false},"authorization":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJCaWJsaW90ZWNhIEFQSSIsInN1YiI6IjEyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzgxNjQwMDcxLCJleHAiOjE3ODE2NDM2NzF9.rEV-QcfQRZwgsCLxdesPYUw6yflZevCVJlxxNHKshkE"},"timestamp":"16/06/2026, 22:01:11"}
+```
+
+### 🟩 12.6. Verificar documentación Redoc
+
+Abrir en navegador del PC local:
+
+```bash
+http://IP-DEL-VPS:9800/docs/index.html
+```
+
+Debe mostrar la documentación generada.
+
+Si no carga:
+
+- Revisar rutas.
+- Revisar configuración de SpringDoc.
+- Revisar logs.
+
+### 🟩 12.7. Verificar acceso externo (desde tu PC)
+
+En tu navegador local:
+
+```bash
+http://IP-DEL-VPS:9800/books/public
+```
+
+Si responde → firewall OK.
+
+Si no responde:
+
+- Revisar UFW.
+- Revisar puertos.
+- Revisar Nginx.
+
+---
+
+## Conclusión
+
+Este ha sido un proceso largo donde el backend codigojava está oficialmente desplegado en producción.  Se ha realizado estos pasos:
+
+- MySQL en Docker.
+- Backend compilado.
+- Servicio systemd.
+- Rutas de uploads.
+- Secretos externos.
+- Logs persistentes.
+- Documentación Redoc.
+- Seguridad JWT.
+- Acceso externo operativo.
+
+---
+
+Capitán, este backend está funcionando mejor que los motores de curvatura después de una noche sin dormir. Le he exprimido hasta el último electrón… y aún así pide más.
+
+Pero puede estar tranquilo: **¡la maldita cosa aguantará!**
+
+
+**Montgomery Scott (Scotty)** - Jefe de Ingeniería de la USS Enterprise (NCC‑1701 y NCC‑1701‑A).
+
+Personaje de ficción de la serie Star Trek.
+
 
