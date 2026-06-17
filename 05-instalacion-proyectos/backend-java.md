@@ -73,11 +73,36 @@ El backend requiere directorios externos para:
 - Logs
 - Código fuente
 
-Para ello clanzar los siguientes comandos:
+Primero creamos la estructura base:
 
 ```bash
 sudo mkdir -p /opt/biblioteca/app
 
+sudo chown -R $USER:$USER /opt/biblioteca
+```
+
+Entrar en el directorio donde se alojará el código fuente:
+
+```bash
+cd /opt/biblioteca/app
+```
+
+Clonar el repositorio:
+
+```bach
+git clone https://github.com/DEVSAM1966/Biblioteca-codigojava.git .
+```
+
+**Nota importante:**  
+         El punto final (.) indica que el repositorio se clonará directamente en el directorio actual, sin crear la carpeta ``Biblioteca-codigojava``.
+         Para que funcione, este directorio debe estar completamente vacío.
+         Si no lo está, Git mostrará un error.
+
+Verificar que el comando **git clone** no devuelve errores.
+
+A continuación, crear los directorios adicionales necesarios y asignar permisos:
+
+```bash
 sudo mkdir -p /opt/biblioteca/secrets
 
 sudo mkdir -p /opt/biblioteca/app/uploads/cover
@@ -89,17 +114,11 @@ sudo mkdir -p /opt/biblioteca/logs
 sudo chown -R $USER:$USER /opt/biblioteca
 ```
 
-Entrar en el directorio del proyecto dentro del VPS:  
+**Nota importante:**
+         Convierte al usuario que ejecuta el comando en propietario de todo /opt/biblioteca.
+         Luego se cambiara a un usuario especial para lanzar el backend como servicio.
 
-```bash
-cd /opt/biblioteca/app
-```
-
-Clonar con git:
-
-```bach
-git clone https://github.com/DEVSAM1966/Biblioteca-codigojava.git .
-```
+        
 
 Verificar el contenido con:
 
@@ -109,13 +128,13 @@ ls -la
 
 ### 🟩 1.7. Verificar que el proyecto se ha clonado correctamente
 
-Verificamos los directorios creados para albergar el backend:
+Verificamos que el repositorio y los directorios necesarios 
 
 ```bash
 tree -L 2
 ```
 
-Debe aparece:
+Debe aparece algo similar a:
 
 ```bash
 docker-compose.yml
@@ -127,7 +146,7 @@ uploads/   (vacío)
 
 ### 1.8. Crear archivo de configuración secreta para producción
 
-El backend requiere un archivo externo fuera del proyecto. Crear con:
+El backend requiere un archivo externo, fuera del código fuente, para almacenar credenciales y claves sensibles. Crear con:
 
 ```bash
 nano /opt/biblioteca/secrets/application-secret.properties
@@ -138,30 +157,30 @@ Contenido recomendado para producción:
 ```bash
 BIBLIO_USER=app_user
 BIBLIO_SECRET=Egdpababpec
-JWT_SECRET=<clave_nueva_segura>
+JWT_SECRET=f06756f8d66b7f85619c0672eeca1cdd
 ```
 
-Guardar con CTRL+O, salir con CTRL+X.
+Guardar con **CTRL+O**, salir con **CTRL+X**.
 
 ### 🟩 1.9. Ajustar application.properties para producción
 
-Editar:
+Editar el archivo principal de configuración:
 
 ```bash
 nano /opt/biblioteca/app/src/main/resources/application.properties
 ```
 
-Modificar esta línea:
+Modificar la línea correspondiente a la importación de parámetros secretos externos:
 
 ```bash
 spring.config.import=optional:file:/opt/biblioteca/secrets/application-secret.properties
 ```
 
-Guardar
+Guardar con **CTRL+O**, salir con **CTRL+X**.
 
 ### 🟩 1.10. Verificación final del Paso 1
 
-Ejecutar:
+Comprobar que las herramientas necesarias están instaladas y accesibles:
 
 ```bash
 java -version
@@ -172,13 +191,10 @@ docker compose version
 
 Si todo responde correctamente, el VPS está listo para:
 
-- Levantar MySQL en Docker
-
-- Importar datos
-
-- Compilar el backend
-
-- Ejecutar el servicio
+- Levantar MySQL en Docker.
+- Importar datos.
+- Compilar el backend.
+- Ejecutar el servicio en produción.
 
 ---
 
@@ -204,14 +220,14 @@ Debera mostrar:
 
 Si no aparece reinstalar el producto que falte.
 
-Uasaremos un contenedor Docker para tener la BD MySQL y verificaremos la instalación de Docker mediante:
+Usaremos un contenedor Docker para tener la BD MySQL y verificaremos la instalación de Docker mediante:
 
 ```bash
 docker --version
 
 docker compose version
 ```
-Si alguno falla se debera instalar Docker.
+Si alguno falla se debera instalar Docker Engine y Docker Compose V2.
 
 ### 🟩 2.2. Verificar dependencias del proyecto (MapStruct, Lombok, JPA, JWT)
 
@@ -224,17 +240,12 @@ mvn dependency:resolve
 
 Esto descargará:
 
-- MapStruct
-
-- Lombok
-
-- Spring Data JPA
-
-- MySQL Connector/J
-
-- JWT Auth0
-
-- Spring Security
+- MapStruct.
+- Lombok.
+- Spring Data JPA.
+- MySQL Connector/J.
+- JWT Auth0.
+- Spring Security.
 
 Si no hay errores, las dependencias están correctas.
 
@@ -245,17 +256,19 @@ El proyecto usa procesadores de anotaciones configurados en el pom.xml.
 Para verificar que funcionan:
 
 ```bash
-mvn -X clean compile
+mvn clean compile
 ```
-En la salida NO deben aparecer errores como:
+En la salida **NO deben aparecer errores** como:
 
-- "Cannot find symbol"
-
-- "No implementation for Mapper"
-
-- "Lombok not found"
+- "Cannot find symbol".
+- "No implementation for Mapper".
+- "Lombok not found".
 
 Si aparece algún error, revisar configuración de MapStruct o configuración de Lombok.
+
+**Nota importante:**
+         Si se desea ejecutar en modo verboso la compilación del proyecto se debe usar ``mvn -X clean compile``
+         ``-X``genera una salida extremadamente larga y en un formato no muy legible para la depuración.
 
 
 ### 🟩 2.4. Verificar MySQL Connector y conexión a BD
@@ -289,7 +302,7 @@ Debe devolver lo siguiente:
 ```bash
 BIBLIO_USER=app_user
 BIBLIO_SECRET=Egdpababpec
-JWT_SECRET=<clave_nueva>
+JWT_SECRET=f06756f8d66b7f85619c0672eeca1cdd
 ```
 
 Si no existe, revisar crear archivo de propiedades secretas.
@@ -320,12 +333,12 @@ mvn -q -DskipTests package
 
 Si el proyecto compila sin errores:
 
-✔ MapStruct funciona
-✔ Lombok funciona
-✔ JPA funciona
-✔ JWT funciona
-✔ MySQL Connector funciona
-✔ El entorno del VPS está listo para continuar
+✔ MapStruct funciona.
+✔ Lombok funciona.
+✔ JPA funciona.
+✔ JWT funciona.
+✔ MySQL Connector funciona.
+✔ El entorno del VPS está listo para continuar con el despliege.
 
 ---
 
