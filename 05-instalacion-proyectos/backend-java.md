@@ -579,13 +579,13 @@ Estos directorios no existen en el repositorio porque están excluidos por ``.gi
 ### 🟩 5.1. Verificar que los directorios existen
 
 ```bash
-tree /opt/biblioteca/uploads
+tree /opt/biblioteca/app/uploads
 ```
 
 Salida esperada:
 
 ```bash
-/opt/biblioteca/uploads
+/opt/biblioteca/app/uploads
 ├── cover
 └── file
 ```
@@ -595,8 +595,8 @@ Salida esperada:
 El usuario que ejecutará el backend debe tener permisos de lectura y escritura sobre estos directorios.
 
 ```bash
-sudo chown -R $USER:$USER /opt/biblioteca/uploads
-sudo chmod -R 755 /opt/biblioteca/uploads
+sudo chown -R $USER:$USER /opt/biblioteca/app/uploads
+sudo chmod -R 755 /opt/biblioteca/app/uploads
 ```
 
 ---
@@ -643,7 +643,7 @@ Debe verse:
 
 ### 🟩 6.2. Comprimir el archivo (opcional pero recomendado)
 
-Para acelerar la transferencia al VPS (no es necesario si es pequeño el fichero generado):
+Para acelerar la transferencia al VPS **(no es necesario si es pequeño el fichero generado)**:
 
 ```bash
 gzip export_biblio_codigojava.sql
@@ -657,7 +657,7 @@ Esto generará: **export_biblio_codigojava.sql.gz**
 
 Este paso transfiere al VPS:
 
-- El archivo SQL exportado en el Paso 6
+- El archivo SQL exportado en el Capitulo 6
 
 - Las portadas JPG/JPEG
 
@@ -676,18 +676,22 @@ sftp usuario@IP_DEL_VPS
 Ejemplo:
 
 ```bash
-sftp sam@51.79.84.186
+sftp mabel@51.79.84.186
 ```
+
+**Nota importante:**
+         Es mejor usar el usuario del técnico que realizo todos los pasos anteriores (Capitulo 1 al 5) para tener permisos sobre el directorio **/opt/biblioteca/**.
+
 
 ## 🟩 7.2. Subir el archivo SQL exportado
 
-En la sesión SFTP:
+En la sesión SFTP, **si el fichero SQL esta comprimido**:
 
 ```bash
 put export_biblio_codigojava.sql.gz /opt/biblioteca/
 ```
 
-Si se comprimo:
+**Si no se comprimo**:
 
 ```bash
 put export_biblio_codigojava.sql /opt/biblioteca/
@@ -699,37 +703,49 @@ En la sesión SFTP:
 
 ```bash
 
-cd /opt/biblioteca/uploads/cover
+cd /opt/biblioteca/app/uploads/cover
 put /home/sam/SAM-PROYECTOS/Biblioteca-codigojava/uploads/cover/*.jpg
 put /home/sam/SAM-PROYECTOS/Biblioteca-codigojava/uploads/cover/*.jpeg
 ```
+
+**Nota aclaratoria:**
+         Se ha puesta la ruta de origen **/home/sam/SAM-PROYECTOS/Biblioteca-codigojava/uploads/cover/** que esta en el PC del técnico de España, pero este directorio puede variar en la maquina de otro usuario.  
+
 
 ### 🟩 7.4. Subir los archivos PDF
 
 En la sesión SFTP:
 
 ```bash
-cd /opt/biblioteca/uploads/file
+cd /opt/biblioteca/app/uploads/file
 put /home/sam/SAM-PROYECTOS/Biblioteca-codigojava/uploads/file/*.pdf
 ```
+
+**Nota aclaratoria:**
+         Se ha puesta la ruta de origen **/home/sam/SAM-PROYECTOS/Biblioteca-codigojava/uploads/file/** que esta en el PC del técnico de España, pero este directorio puede variar en la maquina de otro usuario.
+
 
 ### 🟩 7.5. Verificar que los archivos están en el VPS
 
 Salir de SFTP y ejecutar en el VPS:
 
 ```bash
-ls -lh /opt/biblioteca/uploads/cover
-ls -lh /opt/biblioteca/uploads/file
+ls -lh /opt/biblioteca/app/uploads/cover
+ls -lh /opt/biblioteca/app/uploads/file
 ls -lh /opt/biblioteca/
 ```
 
-Se debe ver los PDFs, Portadas y export_biblio_codigojava.sql o .gz.
+Se debe ver los PDFs, Portadas y export_biblio_codigojava.sql o export_biblio_codigojava.sql.gz.
 
 ### 🟩 7.6. Ajustar permisos (si es necesario)
 
 ```bash
-sudo chown -R $USER:$USER /opt/biblioteca/uploads
-sudo chmod -R 755 /opt/biblioteca/uploads
+sudo chown -R $USER:$USER /opt/biblioteca/app/uploads
+
+sudo chmod -R 755 /opt/biblioteca/app/uploads
+
+sudo chmod 755 /opt/biblioteca/export_biblio_codigojava.sql
+
 ```
 
 ---
@@ -740,11 +756,13 @@ En este capitulo se importa el archivo SQL a la BD del VPS, validamos que las ta
 
 ### 🟩 8.1. Importar el archivo SQL en el contenedor
 
-Si se subio el archivo del export comprimido deberemos hacer:
+Aplica solo si se subió el archivo exportado **comprimido (.gz)**.
+Si el archivo no está comprimido, no ejecutar el comando ``gunzip.``:
 
 ```bash
 gunzip /opt/biblioteca/export_biblio_codigojava.sql.gz
 ```
+
 Ahora realizamos el import con:
 
 ```bash
@@ -796,11 +814,11 @@ SELECT user, host FROM mysql.user;
 
 Debe aparecer:  app_user | %
 
-Podremos salir del la BD con: exit
+Podremos salir del la BD con: ``exit;``
 
 ### 🟩 8.3. Verificación final 
 
-Ekecutamos este comando para verificar en los logs de Docker la ausencia de errores:
+Ejecutamos este comando para verificar en los logs de Docker la ausencia de errores:
 
 ```bash
 docker logs biblio_codigojava_mysql --tail 20
@@ -809,13 +827,13 @@ Buscaremos errores y avisos de importación en BD.
 
 ---
 
-## Levantar el Contenedor Docker de la Base de Datos (Modo Producción)
+## 🟦 9. Levantar el Contenedor Docker de la Base de Datos (Modo Producción)
 
 Este paso asegura que el contenedor MySQL del VPS está en ejecución, estable y listo para ser utilizado por el backend Biblioteca CódigoJava.
 
 ### 🟩 9.1. Levantar el contenedor MySQL en modo producción
 
-Desplazarse hasta el directorio:  **/opt/biblioteca/app/**  Aqui estará el archivo ``docker-compose.yml``.
+Desplazarse hasta el directorio:  **/opt/biblioteca/app/**  Aquí estará el archivo ``docker-compose.yml``.
 
 Ejecutar el siguiente comando Docker:
 
@@ -825,10 +843,10 @@ docker compose up -d
 
 Nota:
     El comando **docker compose up -d** sirve para crear un contenedor que no existe y lo levanta.
-    También si existe el el contendor solo lo lenvanta y en el caso que se hubiese modificado el archivo ``docker-compose.yml`` entonces regenera el contenedor (mantiene los volúmnes y por tanto no hay perdida de datos) y lo levanta.
+    También si el contenedor ya existe, **solo lo lenvanta** y en el caso que se hubiese modificado el archivo ``docker-compose.yml`` entonces regenera el contenedor (mantiene los volúmnes y por tanto no hay perdida de datos) y lo levanta.
 
 
-Verificaremos que el contendor está en ejecución:
+Verificaremos que el contenedor está en ejecución:
 
 ```docker
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
@@ -866,7 +884,7 @@ Realizamos la verificación habitual:
 docker logs biblio_codigojava_mysql --tail 30
 ```
 
-Debemos mostrar que MySQL listo para conexiones, ausencia de errores de permisos y sin avisos po warnings.
+Debemos mostrar que MySQL listo para conexiones, ausencia de errores de permisos y sin avisos o warnings.
 
 ---
 
@@ -882,7 +900,7 @@ Nos posicionamos en el directorio:  **/opt/biblioteca/app** y compilamos con:
 mvn -q -DskipTests clean package
 ```
 
-Esto realiza una limpieza del proyecto, compila. ejecuta los procesadores de anotaciones y empaqueta todo en un ``.jar``.
+Esto realiza una limpieza del proyecto, compila, ejecuta los procesadores de anotaciones y empaqueta todo en un ``.jar``.
 
 
 ### 🟩 10.2. Verificar que el .jar se ha generado correctamente
@@ -903,15 +921,15 @@ Ejecutar una prueba rápida (sin dejarlo corriendo):
 java -jar target/biblioteca-0.0.1-SNAPSHOT.jar --spring.main.web-application-type=none
 ```
 
+✔ Este comando no levanta el servidor web, solo valida que el .jar arranca correctamente.
+
+
 Debe mostrar:
-
 - Banner ASCII
-
 - Logs de Spring Boot
-
 - Inicialización correcta
 
-Detener con ``CTRL + C``.
+Detener con ``CTRL+C``.
 
 ### 🟩 10.4. Verificación final
 
@@ -934,13 +952,9 @@ El backend está correctamente compilado si:
 Este paso configura el backend Biblioteca CódigoJava como un servicio del sistema Linux usando systemd, permitiendo:
 
 - Ejecución en segundo plano.
-
 - Reinicio automático.
-
 - Logs gestionados por journald.
-
 - Arranque automático al reiniciar el VPS.
-
 - Aislamiento del usuario del sistema.
 
 ### 🟩 11.1. Crear un usuario dedicado para el servicio (opcional pero recomendado)
@@ -951,7 +965,7 @@ Esto evita ejecutar el backend como root.
 sudo useradd -r -s /bin/false biblioteca
 ```
 
-Damos permisos al usuario ``biblioteca``sobre ``/opt/biblioteca``:
+Damos permisos al usuario ``biblioteca`` sobre ``/opt/biblioteca``:
 
 ```bash
 sudo chown -R biblioteca:biblioteca /opt/biblioteca
@@ -979,7 +993,7 @@ ExecStart=/usr/bin/java -jar /opt/biblioteca/app/target/biblioteca-0.0.1-SNAPSHO
 SuccessExitStatus=143
 Restart=always
 RestartSec=10
-Environment=SPRING_CONFIG_LOCATION=/opt/biblioteca/secrets/application-secret.properties
+Environment=SPRING_CONFIG_LOCATION=file:/opt/biblioteca/secrets/application-secret.properties
 
 [Install]
 WantedBy=multi-user.target
@@ -1014,14 +1028,14 @@ La salida esperada: **Active: active (running)**
 
 **Si aparece, el backend está funcionando como servicio.**
 
-### 🟩 6. Habilitar arranque automático al iniciar el VPS
+### 🟩 11.6. Habilitar arranque automático al iniciar el VPS
 
 ```bash
 sudo systemctl enable biblioteca
 ```
 
 ATENCIÓN:
-    Para que no de problemas este arranque automático del backend codigojava, deberemos asegurarnos que el contenedor de la BD esta levantado antes.  
+    Para que no de problemas este arranque automático del backend codigojava, deberemos asegurarnos que el contenedor de la BD está levantado antes.  
 
     **Dejo al lector como ejercicio que procedimiento debe seguir para automátizar el arranque del contenedor antes que el backend.**
 
@@ -1031,7 +1045,7 @@ ATENCIÓN:
 sudo journalctl -u biblioteca -f
 ```
 
-Esto nos mostrara logs de Spring Boot, errores, peticiones entrantes, arranques y reinicios.
+Esto nos mostrará logs de Spring Boot, errores, peticiones entrantes, arranques y reinicios.
 
 ### 🟩 11.8. Reiniciar el servicio cuando actualices el backend
 
@@ -1061,7 +1075,8 @@ Visto antes, no entro en detalles:
 sudo systemctl status biblioteca
 ```
 
-Mostrará:  **Active: active (running)**, sino es asi lanzar:
+Debe mostrar: **Active: active (running).**
+Si no aparece, reiniciar el servicio:
 
 ```bash
 sudo systemctl restart biblioteca
@@ -1086,7 +1101,7 @@ curl http://localhost:9800/
 Devolverá: **¡Hola mundo cruel y vil ... !** 
 
 Nota:
-    Tengo la construmbre de preparar un mensaje visible en honor a cierta frase famosa del gremio y con un toque jocoso en la aplicación de backend (antes de completar el desarrollo) para verificar que hay funcionalidad tras la construcción de los ficheros ``pom.xml`` y ``application.properties``.
+         Este mensaje sirve como comprobación rápida de que el backend responde correctamente tras compilar el ``pom.xml`` y cargar ``application.properties``.
 
 
 ### 🟩 12.4. Probar un endpoint público
@@ -1097,7 +1112,7 @@ Desde el VPS:
 http://localhost:9800/books/public
 ```
 
-Devolverá un JSON con los libros.
+Devolverá un JSON con los libros disponibles.
 
 ### 🟩 12.5. Probar autenticación
 
@@ -1109,7 +1124,7 @@ curl -X POST http://localhost:9800/auth/login \
   -d '{"email":"sasuncion9003@gmail.com","password":"Jean-Luc-Picard-1966"}'
 ```
 
-Devolverá un token JWT, en este caso devolvio en crudo:
+Devolverá un token JWT y los datos del usuario autenticado (ver el siguiente ejemplo, no concidirá el token).
 
 ```bash
 {"data":{"user":{"fullname":"Sebastián Asunción Montero","registrationDate":"2026-03-31T00:00:00","role":"ADMIN","userId":12,"userDrop":false},"authorization":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJCaWJsaW90ZWNhIEFQSSIsInN1YiI6IjEyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzgxNjQwMDcxLCJleHAiOjE3ODE2NDM2NzF9.rEV-QcfQRZwgsCLxdesPYUw6yflZevCVJlxxNHKshkE"},"timestamp":"16/06/2026, 22:01:11"}
@@ -1145,13 +1160,13 @@ Si no responde:
 
 - Revisar UFW.
 - Revisar puertos.
-- Revisar Nginx.
+- Revisar Nginx (si aplica).
 
 ---
 
 ## Conclusión
 
-Este ha sido un proceso largo donde el backend codigojava está oficialmente desplegado en producción.  Se ha realizado estos pasos:
+Este ha sido un proceso largo donde el backend codigojava está oficialmente desplegado en producción.  Se han completado correctamente:
 
 - MySQL en Docker.
 - Backend compilado.
@@ -1165,13 +1180,14 @@ Este ha sido un proceso largo donde el backend codigojava está oficialmente des
 
 ---
 
-Capitán, este backend está funcionando mejor que los motores de curvatura después de una noche sin dormir. Le he exprimido hasta el último electrón… y aún así pide más.
+## 🟩 Frase final de Scotty (*)
 
-Pero puede estar tranquilo: **¡la maldita cosa aguantará!**
+**“Capitán, he exprimido este backend más allá de sus especificaciones.
+Y aun así… la maldita cosa aguantará.”** 
+
+    — Montgomery Scott, Jefe de Ingeniería de la USS Enterprise
 
 
-**Montgomery Scott (Scotty)** - Jefe de Ingeniería de la USS Enterprise (NCC‑1701 y NCC‑1701‑A).
-
-Personaje de ficción de la serie Star Trek.
+(*)Personaje de ficción de la serie Star Trek.
 
 
