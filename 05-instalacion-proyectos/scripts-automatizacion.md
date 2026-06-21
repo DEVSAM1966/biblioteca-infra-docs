@@ -333,6 +333,63 @@ Damos los siguientes permisos:
 chmod +x /opt/biblioteca/scripts/start-node-stack.sh
 ```
 
+4. **Script de parada de todos los backend, contenedores y frontend**
+
+Creamos con nano el archivo:
+
+```bash
+nano /opt/biblioteca/scripts/stop-all.sh
+```
+
+Su contenido es el siguiente:
+
+```bash
+#!/bin/bash
+
+RED="\e[31m"
+CYAN="\e[36m"
+GREEN="\e[32m"
+RESET="\e[0m"
+
+echo -e "${CYAN}"
+echo "==============================================="
+echo "   🛑 PARADA COMPLETA — BIBLIOTECA VPS"
+echo "==============================================="
+echo -e "${RESET}"
+
+# --- Detener frontend ---
+echo -e "${RED}→ Deteniendo frontend React...${RESET}"
+pm2 stop biblioteca-frontend >/dev/null 2>&1
+
+# --- Detener backend Node ---
+echo -e "${RED}→ Deteniendo backend Node.js...${RESET}"
+pm2 stop biblioteca-node >/dev/null 2>&1
+
+# --- Detener backend Java ---
+echo -e "${RED}→ Deteniendo backend Java...${RESET}"
+sudo systemctl stop biblioteca >/dev/null 2>&1
+
+# --- Detener contenedor MySQL Node ---
+echo -e "${RED}→ Deteniendo contenedor MySQL del backend Node...${RESET}"
+docker stop biblio_mysql >/dev/null 2>&1
+
+# --- Detener contenedor MySQL Java ---
+echo -e "${RED}→ Deteniendo contenedor MySQL del backend Java...${RESET}"
+docker stop biblio_codigojava_mysql >/dev/null 2>&1
+
+echo -e "${GREEN}"
+echo "==============================================="
+echo "   ✔ TODOS LOS SERVICIOS HAN SIDO DETENIDOS"
+echo "==============================================="
+echo -e "${RESET}"
+```
+
+Proporcionamos permisos:
+
+```bash
+chmod +x /opt/biblioteca/scripts/stop-all.sh
+```
+
 ---
 
 ## 🟧 3. Pasos manuales (si no se usan scripts)
