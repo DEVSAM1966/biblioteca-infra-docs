@@ -205,7 +205,7 @@ Puedo afirmar con un 99,7% de certeza que todo funcionará correctamente.
 El 0,3% restante corresponde a la posibilidad de que el Teniente Worf intente ‘optimizar’ algo con su bat’leth.
 Recomiendo no permitirle acceso al servidor."** 
 
-    — Data,  Segundo Oficial (Second Officer) y Oficial Jefe de Operaciones (Chief Operations Officer) de la USS Enterprise-D.
+    — Data,  Segundo Oficial y Oficial Jefe de Operaciones de la USS Enterprise-D.
 
 
 (*)Personaje de ficción de la serie Star Trek.
