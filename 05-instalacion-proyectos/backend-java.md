@@ -798,10 +798,7 @@ Deben contener registros, si se prefiere hacer algun SELECT para verificar que l
 Verificamos la integridad básica de relaciones con:
 
 ```sql
-SELECT b.id, b.title, a.name 
-FROM books b 
-JOIN authors a ON b.author_id = a.id 
-LIMIT 5;
+SELECT b.isbn, b.title, a.name_author FROM books b JOIN authors a ON b.author_id = a.author_id LIMIT 5;
 ```
 
 Si devuelve filas, las relaciones están correctas.
