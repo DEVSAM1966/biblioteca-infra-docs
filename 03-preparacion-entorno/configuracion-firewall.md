@@ -50,6 +50,7 @@ Nginx necesita estos puertos para servir el frontend y actuar como reverse proxy
 ```bash
 sudo ufw allow 80/tcp
 sudo ufw allow 443/tcp
+sudo ufw allow 8080/tcp
 ```
 
 ---
