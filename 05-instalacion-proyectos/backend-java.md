@@ -162,6 +162,14 @@ JWT_SECRET=f06756f8d66b7f85619c0672eeca1cdd
 
 Guardar con **CTRL+O**, salir con **CTRL+X**.
 
+Este archivo será usado en el archivo ``/opt/biblioteca/app/src/main/resources/application.properties`` para los siguientes parámetros:
+
+- spring.datasource.url
+- spring.datasource.username
+- spring.datasource.password
+- api.security.token.secret
+
+
 ### 🟩 1.9. Ajustar application.properties para producción
 
 Editar el archivo principal de configuración:
@@ -323,7 +331,205 @@ spring.config.import=optional:file:/opt/biblioteca/secrets/application-secret.pr
 
 Si no coincide, revisar configurar application.properties.
 
-### 🟩 2.7. Verificación final
+### 🟩 2.7. Verificar la existencia del plugin spring-boot-maven-plugin
+
+Se debera verificar la existencia del plugin **spring-boot-maven-plugin** en el fichero **/opt/bibiotec/app/pom.xml**.
+
+Es muy importante que exista el plugin.  Sin el plugin se genera dos ficheros **JARs** (biblioteca-0.0.1-SNAPSHOT.jar, biblioteca-0.0.1-SNAPSHOT.jar.original) donde **no es ejecutable el fichero JAR generado como ``biblioteca-0.0.1-SNAPSHOT.jar``.**
+
+Con este plugin se genera un único fichero JAR **biblioteca-0.0.1-SNAPSHOT.jar** y este si es ejecutable y será de mayor tamaño.
+
+Entonces se verifica al final del fichero que tengas dicha entrada:
+
+```java
+                         <plugin>
+                              <groupId>org.springframework.boot</groupId>
+                                <artifactId>spring-boot-maven-plugin</artifactId>
+                                <configuration>
+                                        <excludes>
+                                                <exclude>
+                                                        <groupId>org.projectlombok</groupId>
+                                                        <artifactId>lombok</artifactId>
+                                                </exclude>
+                                        </excludes>
+                                </configuration>
+                        </plugin>
+```
+
+Si no estuviese se debera incluir, mediante el editor nano,  introducciendo la entrada que se mostro antes.
+
+```bash
+nano /opt/bibiotec/app/pom.xml
+```
+
+
+Aqui tenemos todo el fichero pom.xml para que no de lugar a errores la ubicación de este plugin dentro del fichero (por favor reviselo con atención):
+
+```java
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+        <modelVersion>4.0.0</modelVersion>
+        <parent>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-parent</artifactId>
+                <version>3.3.6</version>
+                <relativePath/> <!-- lookup parent from repository -->
+        </parent>
+        <groupId>com.codigojava</groupId>
+        <artifactId>biblioteca</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+        <name>biblioteca</name>
+        <description>Biblioteca codigojava online</description>
+        <url/>
+        <licenses>
+                <license/>
+        </licenses>
+        <developers>
+                <developer/>
+        </developers>
+        <scm>
+                <connection/>
+                <developerConnection/>
+                <tag/>
+                <url/>
+        </scm>
+        <properties>
+                <java.version>17</java.version>
+                <org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
+        </properties>
+        <dependencies>
+                <dependency>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-starter-web</artifactId>
+                </dependency>
+                <dependency>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-starter-data-jpa</artifactId>
+                </dependency>
+                <dependency>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-starter-validation</artifactId>
+                </dependency>
+                <dependency>
+                        <groupId>com.mysql</groupId>
+                        <artifactId>mysql-connector-j</artifactId>
+                        <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok</artifactId>
+                        <optional>true</optional>
+                </dependency>
+                <dependency>
+                        <groupId>org.mapstruct</groupId>
+                        <artifactId>mapstruct</artifactId>
+                        <version>${org.mapstruct.version}</version>
+                </dependency>
+
+                <dependency>
+                        <groupId>org.mapstruct</groupId>
+                        <artifactId>mapstruct-processor</artifactId>
+                        <version>${org.mapstruct.version}</version>
+                        <scope>provided</scope>
+                </dependency>
+
+                <dependency>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-starter-test</artifactId>
+                        <scope>test</scope>
+                </dependency>
+
+                <dependency>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-starter-security</artifactId>
+                </dependency>
+
+                <dependency>
+                        <groupId>com.auth0</groupId>
+                        <artifactId>java-jwt</artifactId>
+                        <version>4.5.1</version>
+                </dependency>
+        </dependencies>
+
+        <build>
+                <plugins>
+                        <plugin>
+                                <groupId>org.apache.maven.plugins</groupId>
+                                <artifactId>maven-compiler-plugin</artifactId>
+                                <version>3.11.0</version>
+                                <configuration>
+                                        <source>${java.version}</source>
+                                        <target>${java.version}</target>
+                                        <annotationProcessorPaths>
+                                                <path>
+                                                        <groupId>org.mapstruct</groupId>
+                                                        <artifactId>mapstruct-processor</artifactId>
+                                                        <version>${org.mapstruct.version}</version>
+                                                </path>
+                                                <path>
+                                                        <groupId>org.projectlombok</groupId>
+                                                        <artifactId>lombok</artifactId>
+                                                        <version>1.18.30</version>
+                                                </path>
+                                                <path>
+                                                        <groupId>org.projectlombok</groupId>
+                                                        <artifactId>lombok-mapstruct-binding</artifactId>
+                                                        <version>0.2.0</version>
+                                                </path>
+                                        </annotationProcessorPaths>
+                                </configuration>
+                        </plugin>
+                          <plugin>
+                              <groupId>org.springframework.boot</groupId>
+                                <artifactId>spring-boot-maven-plugin</artifactId>
+                                <configuration>
+                                        <excludes>
+                                                <exclude>
+                                                        <groupId>org.projectlombok</groupId>
+                                                        <artifactId>lombok</artifactId>
+                                                </exclude>
+                                        </excludes>
+                                </configuration>
+                        </plugin>
+
+
+                </plugins>
+        </build>
+
+</project>
+```
+
+### 🟩 2.8. Verificar que se tenga la anotación @EnableWebSecurity
+
+Comprobar que se tenga la anotacion **@EnableWebSecurity** y su import  en la definicion de la clase del fichero **/opt/biblioteca/app/src/main/java/com/codigojava/biblioteca/security/SecurityConfiguration.java**.
+
+Muestro a continuación la ubicación de esta anotación en esta clase de Java:
+
+```java
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfiguration {
+    @Autowired
+    private SecurityFilter securityFilter;
+```
+
+En el caso que no estuviese se tendrá que editar este fichero con el editor nano para incluir la anotación y su import:
+
+- @EnableWebSecurity
+- import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+
+```bash
+nano /opt/biblioteca/app/src/main/java/com/codigojava/biblioteca/security/SecurityConfiguration.java
+```
+
+
+### 🟩 2.9. Verificación final
 
 Ejecutar:
 
@@ -915,7 +1121,7 @@ Si aparece, la compilación ha sido exitosa.
 Ejecutar una prueba rápida (sin dejarlo corriendo):
 
 ```bash
-java -jar target/biblioteca-0.0.1-SNAPSHOT.jar --spring.main.web-application-type=none
+java -jar target/biblioteca-0.0.1-SNAPSHOT.jar
 ```
 
 ✔ Este comando no levanta el servidor web, solo valida que el .jar arranca correctamente.
@@ -927,6 +1133,13 @@ Debe mostrar:
 - Inicialización correcta
 
 Detener con ``CTRL+C``.
+
+Nota:
+         Se elimino el parámetro: --spring.main.web-application-type=none
+         Anteriormente se validaba el jar con: java -jar target/biblioteca-0.0.1-SNAPSHOT.jar --spring.main.web-application-type=none
+
+         Pero daba problemas con Spring Security y no debe ser usado.
+
 
 ### 🟩 10.4. Verificación final
 
@@ -1064,6 +1277,10 @@ sudo systemctl stop biblioteca
 
 Confirmaremos que el backend Biblioteca CódigoJava está funcionando correctamente en el VPS, que responde a peticiones HTTP, que se conecta a la base de datos y que la documentación Redoc está disponible.
 
+Recordemos que a nivel de firewall tenemos abiertos los puertos: 22. 80. 443 y 8080.
+
+Este proyecto de backend escucha por el puerto 9800, pero solo tiene abierto el puerto 8080, asi que cuando arranquemos el servicio de biblioteca con ``sudo systemctl start biblioteca`` escuchara `por el 8080.
+
 ## 🟩 12.1. Verificar que el servicio está en ejecución
 
 Visto antes, no entro en detalles:
@@ -1092,7 +1309,7 @@ sudo journalctl -u biblioteca -f
 Desde el VPS:
 
 ```bash
-curl http://localhost:9800/
+curl http://localhost:8080/
 ```
 
 Devolverá: **¡Hola mundo cruel y vil ... !** 
@@ -1106,7 +1323,7 @@ Nota:
 Desde el VPS:
 
 ```bash
-http://localhost:9800/books/public
+http://localhost:8080/books/public
 ```
 
 Devolverá un JSON con los libros disponibles.
@@ -1116,7 +1333,7 @@ Devolverá un JSON con los libros disponibles.
 Desde el VPS:
 
 ```bash
-curl -X POST http://localhost:9800/auth/login \
+curl -X POST http://localhost:8080/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"sasuncion9003@gmail.com","password":"Jean-Luc-Picard-1966"}'
 ```
@@ -1132,7 +1349,7 @@ Devolverá un token JWT y los datos del usuario autenticado (ver el siguiente ej
 Abrir en navegador del PC local:
 
 ```bash
-http://IP-DEL-VPS:9800/docs/index.html
+http://IP-DEL-VPS:8080/docs/index.html
 ```
 
 Debe mostrar la documentación generada.
