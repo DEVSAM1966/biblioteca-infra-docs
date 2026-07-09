@@ -166,30 +166,46 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-## 🟦 6. Verificación final
+---
 
-### 🟦 6.1. Acceso al frontend
+## 🟦 6. Arreglo final.
+
+En la activación del servicio del frontend nos dimos cuenta que el hecho de tener ``hardcoreada`` directamente con la ruta ``http://localhost:9800`` nos daba problemas.
+
+
+Directamente en los ficheros del frontend que aparece ``http://localhost:9800`` se cambio por ``www.codigojava.com:9800``.
+
+Con este cambio se soluciono el problema.  En definitiva el sistema no sabia interpretar correctamente ``localhost``.
+
+Los ficheros del frontend afectados en el cambio fueron:
+
+- /opt/Biblioteca-codigojava-front/src/config.ts
+
+---
+
+## 🟦 7. Verificación final
+
+### 🟦 7.1. Acceso al frontend
 
 Abrimos nuestro navegador y probamos el acceso al frontend mediante la url: ``http://www.codigojava.com``
 
 Debe cargar la aplicación.
 
-### 🟦 6.2. Redirección
+### 🟦 7.2. Redirección
 
 Si desde el navegador ponemos la url: ``http://codigojava.com`` deve enviarnos automáticamente a ``www.codigojava.com``.
 
-### 🟦 6.3. Verificación del backend
+### 🟦 7.3. Verificación del backend
 
 Desde el navegador de nuestro PC verificamos las siguientes urls:
 
 1. http://www.codigojava.com/books/public y debera devolver todos los libros del catalogo.
 
+![Listado libros en public](/assets/capturas/Listado-books-public.jpg)
+
 2. http://www.codigojava.com/books/public/file/9781234567890 y mostrará esto:
-```bash
-data	
-bookFile	"uploads/file/9781234567890_Foundation.PDF"
-timestamp	"19/06/2026, 19:34:25"
-```
+
+![Ruta fichero de Fundación](/assets/capturas/Ruta-fichero-books-foundation.jpg)
 
 3. Con Postman podemos lanzar esta url http://www.codigojava.com/auth/login  con el JSON:
 ```json
