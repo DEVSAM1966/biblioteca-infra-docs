@@ -55,6 +55,8 @@ Incluye guías para despliegue en **AWS**, **Oracle** y en **VPS compartido**, c
 - [Frontend React](05-instalacion-proyectos/frontend-react.md)
 - [Scripts de Automatización](05-instalacion-proyectos/scripts-automatizacion.md)
 
+### 6. Resultado final
+- [Acto final](06-resultados/acto-final.md)
 ---
 
 ## 📂 Assets
