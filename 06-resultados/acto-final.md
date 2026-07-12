@@ -1,4 +1,4 @@
-# ⚛️ 📘 Acto final del despliegue en el VPS
+# 📘 Acto final del despliegue en el VPS
 
 Llegado a este punto podemos ver el resultado del despliegue del proyecto:
 

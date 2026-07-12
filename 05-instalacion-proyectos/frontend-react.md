@@ -38,7 +38,16 @@ git clone https://github.com/DEVSAM1966/Biblioteca-codigojava-front.git
 ```
 **Nota importante:**
          Es importante estar en el directorio /opt y al clonar el proyecto con git tendremos la carpeta /opt/Biblioteca-codigojava-front.
+
          En esta última carpeta estará el proyecto.
+
+4. Ahora deberemos cambiar el contenido del fichero ``/opt/Biblioteca-codigojava-front/src/config.ts``.
+
+En este fichero tenemos puesto la ruta: **http://localhost:9800** (versión de desarrollo).
+
+Se debe cambiar por: **www.codigojava.com:9800** (versión en producción).
+
+Este cambio es muy importante para que el frontend apunte a los endpoint del backend correctamente y nginx lo intercepta de manera correcta (ver punto 4 - Configuración del Ngix).
 
 ---
 
@@ -78,9 +87,13 @@ cp -r dist/* /opt/frontend/
 2. Comprobar que este todo:
 ```bash
 ls /opt/frontend
+
+ls -la /opt/frontend/assets/*.js
 ```
 **Nota importante:**
          Debe aparecer ``index.html`` y la carpeta ``assets``.
+
+         Además un único fichero ``JS`` en la carpeta ``assets``.
 
 ## 🟦 4. Configurar Nginx
 
@@ -112,31 +125,35 @@ server {
     }
 
     location /books/ {
-        proxy_pass http://localhost:9800/books/;
+        proxy_pass http://localhost:9800;
     }
 
     location /authors/ {
-        proxy_pass http://localhost:9800/authors/;
+        proxy_pass http://localhost:9800;
     }
 
     location /categories/ {
-        proxy_pass http://localhost:9800/categories/;
+        proxy_pass http://localhost:9800;
     }
 
     location /publishers/ {
-        proxy_pass http://localhost:9800/publishers/;
+        proxy_pass http://localhost:9800;
     }
 
     location /loans/ {
-        proxy_pass http://localhost:9800/loans/;
+        proxy_pass http://localhost:9800;
+    }
+
+    location /users {
+    proxy_pass http://localhost:9800;
     }
 
     location /auth/ {
-        proxy_pass http://localhost:9800/auth/;
+        proxy_pass http://localhost:9800;
     }
 
     location /uploads/ {
-        proxy_pass http://localhost:9800/uploads/;
+        proxy_pass http://localhost:9800;
     }
 
     proxy_set_header Host $host;
@@ -151,10 +168,21 @@ Guardar y cerrar.
 
 ## 🟦 5. Activar la configuración
 
+Esta parte se realizo en el punto 3 del apartado **Configuración del dominio**.
+
 1. Activar el sitio:
+Si fue realizado en la **Configuracion del dominio** no será necesario volverlo hacer esta instrucción.
+
 ```bash
 sudo ln -s /etc/nginx/sites-available/codigojava.com /etc/nginx/sites-enabled/
 ```
+
+**NOTA**:
+     Como seguramente se realizo al configurar el dominio si volvemos a lanzar este comando el sistema nos devolverá:
+
+     ln: failed to create symbolic link '/etc/nginx/sites-enabled/codigojava.com': File exists
+
+     Por lo que se podría sobreescribir, borrarlo y hacerlo otra vez o simplemente dejar el que ya está
 
 2. Verificación que no hay errores:
 ```bash
@@ -168,18 +196,26 @@ sudo systemctl reload nginx
 
 ---
 
-## 🟦 6. Arreglo final.
+## 🟦 6. Bonus: Limpieza antes de copiar (repetición del build)
 
-En la activación del servicio del frontend nos dimos cuenta que el hecho de tener ``hardcoreada`` directamente con la ruta ``http://localhost:9800`` nos daba problemas.
+Si por cualquier motivo tenemos que volver a ejecutar un **build del proyecto de frontend**, para que no quede archivos antiguos que confunden hay que borrar el contenido antiguo primero, con el fin de eliminar todos los ``bundles`` antiguos dando vueltas.
 
+```bash
+cd /opt/Biblioteca-codigojava-front
+npm run build
 
-Directamente en los ficheros del frontend que aparece ``http://localhost:9800`` se cambio por ``www.codigojava.com:9800``.
+rm -rf /opt/frontend/*
 
-Con este cambio se soluciono el problema.  En definitiva el sistema no sabia interpretar correctamente ``localhost``.
+cp -r dist/* /opt/frontend/
+```
 
-Los ficheros del frontend afectados en el cambio fueron:
+Ahora verificamos que solo quede un archivo JS mediante:
 
-- /opt/Biblioteca-codigojava-front/src/config.ts
+```bash
+ls -la /opt/frontend/assets/*.js
+```
+
+Deberá mostrar sólo el más reciente.
 
 ---
 
